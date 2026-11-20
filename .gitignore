@@ -1,0 +1,19 @@
+# Environments
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Large or rebuildable data (see README "Reproduce")
+data/raw/viirs/
+data/raw/_tmp/
+data/raw/boundaries/
+data/raw/*.log
+data/processed/*.duckdb
+data/processed/*.duckdb.wal
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

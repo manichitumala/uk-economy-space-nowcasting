@@ -1,0 +1,54 @@
+# Data configuration for the UK space-nowcasting pipeline.
+# All paths are relative to the repository root.
+
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  warehouse: data/processed/nowcast.duckdb
+
+satellite:
+  # HKU monthly VIIRS-like nighttime lights (Cheng et al., ESSD 2026), CC BY 4.0.
+  # Native EOG 15 arc-second grid, radiance in nW cm-2 sr-1.
+  figshare_article_id: 31321315
+  first_month: "2012-04"      # first genuine NPP-VIIRS month (earlier months are DMSP-simulated)
+  last_month: "2025-12"
+  # UK bounding box used to crop the global rasters (lon_min, lat_min, lon_max, lat_max)
+  uk_bbox: [-8.70, 49.80, 1.85, 60.90]
+  # Radiance thresholds (nW cm-2 sr-1) used for derived features
+  lit_threshold: 0.5
+  bright_threshold: 20.0
+  # Months whose UK field is a scalar multiple of a previous month are flagged as imputed.
+  # A pixel-wise ratio coefficient of variation below this value is treated as "synthetic".
+  imputation_cv_threshold: 0.02
+  # Assumed public-availability lag of a monthly composite after the month ends (days).
+  availability_lag_days: 30
+
+boundaries:
+  # ONS Open Geography Portal (ArcGIS REST). Generalised (20 m) clipped boundaries.
+  itl1_url: "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/International_Territorial_Level_1_January_2021_UK_BGC_2022/FeatureServer/0/query"
+  lad_url: "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Local_Authority_Districts_December_2024_Boundaries_UK_BGC/FeatureServer/0/query"
+
+ons:
+  quarterly_regional_gdp_page: "https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/quarterlyregionalgdpenglandandwales"
+  annual_regional_gdp_page: "https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/regionalgrossdomesticproductallnutslevelregions"
+  # Assumed lag (days after quarter end) at which a quarterly regional GDP estimate becomes public.
+  # Based on the cadence of the 2019-2023 experimental series (roughly 4 months).
+  quarterly_regional_gdp_lag_days: 130
+  # Assumed lag for UK monthly GDP (first estimate ~6 weeks after month end).
+  monthly_gdp_lag_days: 42
+  # Assumed lag for regional claimant count (published mid-month following reference month).
+  claimant_count_lag_days: 18
+
+regions:
+  # ITL1 codes (2021) for the nine English regions and Wales
+  TLC: North East
+  TLD: North West
+  TLE: Yorkshire and The Humber
+  TLF: East Midlands
+  TLG: West Midlands
+  TLH: East of England
+  TLI: London
+  TLJ: South East
+  TLK: South West
+  TLL: Wales
