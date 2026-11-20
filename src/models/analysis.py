@@ -26,6 +26,7 @@ from src.models import evaluate as E
 from src.models.train import Q_ECON, Q_SAT, specs, fit_final
 from src.processing import economic as econ
 from src.utils.config import ROOT, path, regions
+from src.utils.labels import FEATURE
 
 log = logging.getLogger(__name__)
 warnings.filterwarnings("ignore")
@@ -41,6 +42,19 @@ INK, INK2, GRID, SURFACE = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
 SEQ = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"]
 COVID = ("2020Q1", "2021Q2")
 FAMILIES = ["ridge", "enet", "xgb", "lgbm"]
+_METHOD = {"zero": "Always predict zero", "historical_mean": "Long-run average",
+           "last_published": "Last official figure", "bridge_conventional": "Bridge equation · Economic",
+           "ridge_B_sat_plus_bridge": "Bridge equation + satellite", "ridge": "Ridge", "enet": "Elastic Net",
+           "xgb": "XGBoost", "lgbm": "LightGBM"}
+_DATA = {"A_econ": "Economic", "B_sat": "Satellite only", "C_econ_sat": "Economic + satellite"}
+
+
+def friendly(model: str) -> str:
+    """Plain-English model label for figures, e.g. 'lgbm_C_econ_sat' -> 'LightGBM · Economic + satellite'."""
+    if model in _METHOD:
+        return _METHOD[model]
+    fam, _, grp = model.partition("_")
+    return f"{_METHOD.get(fam, fam)} · {_DATA.get(grp, grp)}"
 
 
 def _style():
@@ -404,12 +418,13 @@ def figures(bt_b, bt_a, mat, rv, ld_info, dev, shap_share, results):
     mt = pd.DataFrame(results["track_b"]["target_ex_covid"]["metrics"]).sort_values("mae", ascending=False)
     col = {"baseline": GRID, "A_econ": C_ECON, "B_sat": C_THIRD, "C_econ_sat": C_SAT}
     fig, ax = plt.subplots(figsize=(7, 5.2))
-    ax.barh(mt["model"], mt["mae"], color=[col[g] if g != "baseline" else "#b9b8b2" for g in mt["group"]],
+    labels = mt["model"].map(friendly)
+    ax.barh(labels, mt["mae"], color=[col[g] if g != "baseline" else "#b9b8b2" for g in mt["group"]],
             height=0.7, edgecolor=SURFACE, linewidth=2)
-    for yv, v in zip(mt["model"], mt["mae"]):
+    for yv, v in zip(labels, mt["mae"]):
         ax.text(v + 0.01, yv, f"{v:.3f}", va="center", fontsize=8, color=INK2)
-    ax.set_xlabel("MAE, percentage points (2016Q1-2025Q3 excl. 2020Q1-2021Q2)")
-    ax.set_title("Quarterly regional GDP growth nowcasts: out-of-sample MAE")
+    ax.set_xlabel("Average forecast error, percentage points (2016-2025, excl. COVID) - lower is better")
+    ax.set_title("Quarterly regional growth: adding satellite data changes almost nothing")
     from matplotlib.patches import Patch
     ax.legend(handles=[Patch(color="#b9b8b2", label="Naive baseline"), Patch(color=C_ECON, label="A: economic only"),
                        Patch(color=C_THIRD, label="B: satellite only"), Patch(color=C_SAT, label="C: economic + satellite")],
@@ -439,12 +454,13 @@ def figures(bt_b, bt_a, mat, rv, ld_info, dev, shap_share, results):
     # 6. Track A MAE by model
     mt = pd.DataFrame(results["track_a"]["target_all"]["metrics"]).sort_values("mae", ascending=False)
     fig, ax = plt.subplots(figsize=(7, 5.2))
-    ax.barh(mt["model"], mt["mae"], color=[col[g] if g != "baseline" else "#b9b8b2" for g in mt["group"]],
+    labels = mt["model"].map(friendly)
+    ax.barh(labels, mt["mae"], color=[col[g] if g != "baseline" else "#b9b8b2" for g in mt["group"]],
             height=0.7, edgecolor=SURFACE, linewidth=2)
-    for yv, v in zip(mt["model"], mt["mae"]):
+    for yv, v in zip(labels, mt["mae"]):
         ax.text(v + 0.03, yv, f"{v:.2f}", va="center", fontsize=8, color=INK2)
-    ax.set_xlabel("MAE, percentage points (361 local authorities, 2016-2024)")
-    ax.set_title("Annual local-authority real GDP growth nowcasts: out-of-sample MAE")
+    ax.set_xlabel("Average forecast error, percentage points (361 local areas, 2016-2024) - lower is better")
+    ax.set_title("Yearly local growth: economic data wins; satellite alone is worse than average")
     ax.legend(handles=[Patch(color="#b9b8b2", label="Naive baseline"), Patch(color=C_ECON, label="A: economic only"),
                        Patch(color=C_THIRD, label="B: satellite only"), Patch(color=C_SAT, label="C: economic + satellite")],
               loc="upper center", bbox_to_anchor=(0.4, -0.12), ncol=4, fontsize=8)
@@ -471,10 +487,10 @@ def figures(bt_b, bt_a, mat, rv, ld_info, dev, shap_share, results):
     # 8. SHAP
     fig, ax = plt.subplots(figsize=(6.5, 4.6))
     s = shap_share.sort_values()
-    ax.barh(s.index, s.values, color=[C_SAT if c in Q_SAT else C_ECON for c in s.index], height=0.7,
+    ax.barh([FEATURE.get(c, c) for c in s.index], s.values, color=[C_SAT if c in Q_SAT else C_ECON for c in s.index], height=0.7,
             edgecolor=SURFACE, linewidth=2)
     ax.xaxis.set_major_formatter(matplotlib.ticker.PercentFormatter(1.0))
-    ax.set_title("XGBoost (C) mean |SHAP| share, quarterly nominal growth")
+    ax.set_title("What the model relies on (share of SHAP attribution)")
     ax.legend(handles=[Patch(color=C_ECON, label="Economic"), Patch(color=C_SAT, label="Satellite")],
               loc="lower right", fontsize=8)
     ax.grid(axis="y", visible=False)

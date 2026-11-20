@@ -6,6 +6,39 @@
 
 ---
 
+## In plain English
+
+**The question.** Official figures on how fast each part of the UK economy is growing arrive months,
+sometimes nearly two years, late. Satellites photograph the country's lights every night. Can
+those pictures give an earlier, useful estimate?
+
+**What I did.** I measured night-time brightness for 10 regions and 361 local areas every month
+from 2012 to 2025. I then replayed history: for every quarter since 2016, I made a forecast using
+only the information available at the time, once *with* satellite data and once *without*, and
+compared both with what officially happened.
+
+**What I found.**
+
+* Brighter places have bigger economies. Brightness explains 55% of the differences between areas.
+* Satellites can spot big shocks. Central London went about 22% darker than the rest of the
+  country during the 2021 lockdown.
+* **Satellites don't improve forecasts of short-term growth.** Forecasts with satellite data were
+  no more accurate than forecasts without it.
+* Nearly half the satellite record isn't real data for the UK. Summer nights are too short to
+  observe, so the source fills them with copies of December. Using those months naively would let
+  a forecast "see the future", so they were removed.
+
+**Why it fails.** The UK runs mostly on services (an office's output doesn't change its lights),
+LED street lights look dimmer to the satellite, cloud adds large noise, and there is no usable
+summer data.
+
+**Why this is still a useful result.** It shows how to test an alternative data source properly:
+check how the data was made, use only information that was available at the time, compare
+against strong conventional methods, and test whether differences are real. The full technical
+detail follows.
+
+---
+
 ## Abstract
 
 I build a reproducible pipeline that converts 165 months (April 2012 to December 2025) of
