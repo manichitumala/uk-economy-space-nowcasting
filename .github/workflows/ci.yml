@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Unit, leakage and data-quality tests
+        run: pytest -v
+      - name: Re-run backtests and analysis from committed features
+        run: |
+          python -m src.models.train
+          python -m src.models.predict
+          python -m src.models.analysis
+      - name: Dashboard smoke test
+        run: |
+          python - <<'EOF'
+          from streamlit.testing.v1 import AppTest
+          at = AppTest.from_file("dashboard/app.py", default_timeout=300)
+          at.run()
+          assert not at.exception, at.exception
+          EOF
